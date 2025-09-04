@@ -1,18 +1,35 @@
+"""
+URL patterns for timetracking app
+"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .views import (
+    UserRegistrationView, UserLoginView, UserProfileView,
+    TimeEntryViewSet, TrackerView
 )
 
-# We'll add our viewsets to this router later
+# Router for ViewSets
 router = DefaultRouter()
+router.register(r'time-entries', TimeEntryViewSet, basename='timeentry')
 
 urlpatterns = [
     # Authentication endpoints
-    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/register/', UserRegistrationView.as_view(), name='user_register'),
+    path('auth/login/', UserLoginView.as_view(), name='user_login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # Include router URLs (will add viewsets in next steps)
+    # User profile
+    path('users/me/', UserProfileView.as_view(), name='user_profile'),
+    
+    # Tracker endpoints
+    path('tracker/status/', TrackerView.as_view(), name='tracker_status'),
+    path('tracker/start/', TrackerView.as_view(), name='tracker_action'),
+    path('tracker/pause/', TrackerView.as_view(), name='tracker_action'),
+    path('tracker/resume/', TrackerView.as_view(), name='tracker_action'),
+    path('tracker/reset/', TrackerView.as_view(), name='tracker_action'),
+    
+    # Include router URLs (time-entries endpoints)
     path('', include(router.urls)),
 ]

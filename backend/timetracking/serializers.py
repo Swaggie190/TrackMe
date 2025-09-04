@@ -85,6 +85,11 @@ class UserProfileSerializer(me_serializers.DocumentSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'display_name', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'email', 'created_at', 'updated_at']
+    
     def update(self, instance, validated_data):
         instance.display_name = validated_data.get('display_name', instance.display_name)
         instance.save()

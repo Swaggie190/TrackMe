@@ -58,9 +58,9 @@ const RegisterPage = () => {
       }
 
       const result = await registerUser({
-        display_name: data.display_name.trim(),
         email: data.email.trim(),
         password: data.password,
+        display_name: data.display_name.trim(),
       });
 
       if (result.success) {

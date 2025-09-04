@@ -7,7 +7,7 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import { useTracker } from '../hooks/useTracker';
-import { useNotifications } from './common/Notifications';
+import { useNotifications } from '../components/common/Notifications';
 import { formatTime } from '../services/api';
 
 const Tracker = ({ onBookTime }) => {

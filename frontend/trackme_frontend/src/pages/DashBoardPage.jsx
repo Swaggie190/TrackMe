@@ -6,13 +6,13 @@ import {
   CalendarDaysIcon,
   UserIcon,
   PlusIcon,
-  ArrowRefreshIcon,
+  ArrowPathIcon,
   ChartBarIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../components/common/Notifications';
-import Tracker from '../components/tracker/Tracker';
+import Tracker from '../tracker/Tracker';
 import TimeEntryModal from '../components/entries/TimeEntryModal';
 import api, { formatTime, formatDateTime } from '../services/api';
 

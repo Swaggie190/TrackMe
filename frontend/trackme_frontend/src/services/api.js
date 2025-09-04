@@ -116,6 +116,80 @@ const api = {
       const response = await apiClient.put('/users/me/', userData);
       return response.data;
     },
+
+    changePassword: async (passwordData) => {
+      const response = await apiClient.post('/auth/change-password/', passwordData);
+      return response.data;
+    },
+  },
+
+  // Statistics endpoints - NEW
+  stats: {
+    getDashboardStats: async () => {
+      try {
+        // For now, calculate stats on the frontend since backend might not have this endpoint
+        // This is a fallback implementation that can be replaced when backend stats are ready
+        const response = await api.timeEntries.getAll({ page_size: 1000 });
+        const entries = response.results || [];
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const thisWeekStart = new Date(today.getTime() - (today.getDay() * 24 * 60 * 60 * 1000));
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const todayEntries = entries.filter(entry => {
+          const entryDate = new Date(entry.end_time);
+          return entryDate >= today;
+        });
+
+        const thisWeekEntries = entries.filter(entry => {
+          const entryDate = new Date(entry.end_time);
+          return entryDate >= thisWeekStart;
+        });
+
+        const thisMonthEntries = entries.filter(entry => {
+          const entryDate = new Date(entry.end_time);
+          return entryDate >= thisMonthStart;
+        });
+
+        const todaySeconds = todayEntries.reduce((sum, entry) => sum + entry.duration_seconds, 0);
+        const thisWeekSeconds = thisWeekEntries.reduce((sum, entry) => sum + entry.duration_seconds, 0);
+        const thisMonthSeconds = thisMonthEntries.reduce((sum, entry) => sum + entry.duration_seconds, 0);
+        const totalSeconds = entries.reduce((sum, entry) => sum + entry.duration_seconds, 0);
+
+        const avgSessionDuration = entries.length > 0 
+          ? Math.round(totalSeconds / entries.length) 
+          : 0;
+
+        return {
+          total_entries: entries.length,
+          total_hours: totalSeconds / 3600,
+          this_week_hours: thisWeekSeconds / 3600,
+          this_month_hours: thisMonthSeconds / 3600,
+          today_seconds: todaySeconds,
+          today_entries: todayEntries.length,
+          avg_session_duration: avgSessionDuration,
+        };
+      } catch (error) {
+        // Fallback to empty stats if API call fails
+        console.warn('Stats calculation failed, using empty stats:', error);
+        return {
+          total_entries: 0,
+          total_hours: 0,
+          this_week_hours: 0,
+          this_month_hours: 0,
+          today_seconds: 0,
+          today_entries: 0,
+          avg_session_duration: 0,
+        };
+      }
+    },
+
+    // When backend implements proper stats endpoints, replace above with:
+    // getDashboardStats: async () => {
+    //   const response = await apiClient.get('/stats/dashboard/');
+    //   return response.data;
+    // },
   },
 
   // Tracker endpoints
@@ -126,22 +200,22 @@ const api = {
     },
     
     start: async () => {
-      const response = await apiClient.post('/tracker/status/', { action: 'start' });
+      const response = await apiClient.post('/tracker/start/');
       return response.data;
     },
     
     pause: async () => {
-      const response = await apiClient.post('/tracker/status/', { action: 'pause' });
+      const response = await apiClient.post('/tracker/pause/');
       return response.data;
     },
     
     resume: async () => {
-      const response = await apiClient.post('/tracker/status/', { action: 'resume' });
+      const response = await apiClient.post('/tracker/resume/');
       return response.data;
     },
     
     reset: async () => {
-      const response = await apiClient.post('/tracker/status/', { action: 'reset' });
+      const response = await apiClient.post('/tracker/reset/');
       return response.data;
     },
   },
@@ -173,6 +247,37 @@ const api = {
       return true;
     },
   },
+
+  // Export endpoints - NEW
+  export: {
+    csv: async (filters = {}) => {
+      const response = await apiClient.get('/time-entries/export/csv/', { 
+        params: filters,
+        responseType: 'blob'
+      });
+      return response.data;
+    },
+    
+    json: async (filters = {}) => {
+      const response = await apiClient.get('/time-entries/export/json/', { 
+        params: filters
+      });
+      return response.data;
+    },
+  },
+
+  // System endpoints - NEW
+  system: {
+    health: async () => {
+      const response = await apiClient.get('/health/');
+      return response.data;
+    },
+    
+    version: async () => {
+      const response = await apiClient.get('/version/');
+      return response.data;
+    },
+  },
 };
 
 // Error handling helper
@@ -190,6 +295,7 @@ export const handleApiError = (error) => {
       return {
         type: 'auth',
         message: 'Please log in to continue.',
+        details: data,
       };
     } else if (status === 403) {
       return {
@@ -200,6 +306,12 @@ export const handleApiError = (error) => {
       return {
         type: 'not_found',
         message: 'The requested resource was not found.',
+      };
+    } else if (status === 422) {
+      return {
+        type: 'validation',
+        message: data.message || 'Validation error occurred.',
+        details: data,
       };
     } else if (status >= 500) {
       return {
@@ -220,17 +332,23 @@ export const handleApiError = (error) => {
   };
 };
 
+// Time formatting helpers
 export const formatTime = (seconds) => {
+  if (!seconds || seconds < 0) return '00:00:00';
+  
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  const secs = Math.floor(seconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
 // Date formatting helpers
 export const formatDate = (dateString) => {
+  if (!dateString) return '';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -239,7 +357,10 @@ export const formatDate = (dateString) => {
 };
 
 export const formatDateTime = (dateString) => {
+  if (!dateString) return '';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -247,6 +368,64 @@ export const formatDateTime = (dateString) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+// Duration helpers - NEW
+export const parseDurationString = (durationStr) => {
+  // Parse "HH:MM:SS" or "HH:MM" format into seconds
+  if (!durationStr) return 0;
+  
+  const parts = durationStr.split(':').map(p => parseInt(p, 10));
+  if (parts.length === 2) {
+    // HH:MM format
+    return (parts[0] * 3600) + (parts[1] * 60);
+  } else if (parts.length === 3) {
+    // HH:MM:SS format
+    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+  }
+  
+  return 0;
+};
+
+export const secondsToHours = (seconds) => {
+  if (!seconds || seconds < 0) return 0;
+  return Math.round((seconds / 3600) * 100) / 100; // Round to 2 decimal places
+};
+
+export const hoursToSeconds = (hours) => {
+  if (!hours || hours < 0) return 0;
+  return Math.round(hours * 3600);
+};
+
+// Validation helpers - NEW
+export const validateEmail = (email) => {
+  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+  return emailRegex.test(email);
+};
+
+export const validateTimeEntry = (entry) => {
+  const errors = {};
+  
+  if (!entry.description || entry.description.trim().length === 0) {
+    errors.description = 'Description is required';
+  } else if (entry.description.length > 500) {
+    errors.description = 'Description must be less than 500 characters';
+  }
+  
+  if (!entry.end_time) {
+    errors.end_time = 'End time is required';
+  }
+  
+  if (!entry.duration_seconds || entry.duration_seconds <= 0) {
+    errors.duration_seconds = 'Duration must be greater than 0';
+  } else if (entry.duration_seconds > 24 * 3600) {
+    errors.duration_seconds = 'Duration cannot exceed 24 hours';
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
 };
 
 export default api;

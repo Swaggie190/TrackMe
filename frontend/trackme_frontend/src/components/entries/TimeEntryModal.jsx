@@ -252,7 +252,7 @@ const TimeEntryModal = ({
             </div>
 
             {durationInputType === 'duration' ? (
-              /* Direct Duration Input */
+              /* Duration Input */
               <div className="form-group">
                 <label htmlFor="duration_hours" className="form-label">
                   Duration (Hours) <span className="text-danger-500">*</span>
@@ -261,34 +261,27 @@ const TimeEntryModal = ({
                   id="duration_hours"
                   type="number"
                   step="0.25"
-                  min="0.01"
+                  min="0"
                   max="24"
                   className={`form-input ${
                     errors.duration_seconds ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''
                   }`}
                   placeholder="1.5"
-                  {...register('duration_hours', {
-                    required: 'Duration is required',
-                    min: { value: 0.01, message: 'Duration must be at least 0.01 hours (36 seconds)' },
-                    max: { value: 24, message: 'Duration cannot exceed 24 hours' },
-                    onChange: (e) => {
-                      const hours = parseFloat(e.target.value);
-                      if (!isNaN(hours)) {
-                        setValue('duration_seconds', hoursToSeconds(hours));
-                      }
-                    },
-                  })}
-                  defaultValue={secondsToHours(3600)}
+                  value={secondsToHours(watch('duration_seconds') || 3600)}
+                  onChange={(e) => {
+                    const hours = parseFloat(e.target.value) || 0;
+                    setValue('duration_seconds', hoursToSeconds(hours));
+                  }}
                 />
                 {errors.duration_seconds && (
                   <p className="form-error">{errors.duration_seconds.message}</p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  Example: 1.5 for 1 hour 30 minutes
+                  Enter duration in hours (e.g., 1.5 for 1 hour 30 minutes)
                 </p>
               </div>
             ) : (
-              /* Start/End Time Inputs */
+              /* Start and End Time Inputs */
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label htmlFor="start_time" className="form-label">

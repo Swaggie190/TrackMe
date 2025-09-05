@@ -94,7 +94,7 @@ const SearchAndFilters = ({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
       {/* Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-4">/
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input

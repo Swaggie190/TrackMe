@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogBackdrop, DialogTitle} from '@headlessui/react';
+import { Dialog, DialogBackdrop, DialogTitle, DialogPanel} from '@headlessui/react';
 import { 
   XMarkIcon, 
   ClockIcon,
@@ -10,19 +10,23 @@ import {
 } from '@heroicons/react/24/outline';
 import api, { formatTime } from '../../services/api';
 
+
 console.log({ Dialog, XMarkIcon, ClockIcon, PlusIcon, PencilIcon, CalendarIcon, api, formatTime });
+
 
 const TimeEntryModal = ({ 
   isOpen, 
   onClose, 
   onSuccess, 
-  entry = null // null for create, entry object for edit
+  entry = null,
+  initialData = null 
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [durationInputType, setDurationInputType] = useState('duration'); 
 
   const isEditing = !!entry;
+  const isFromTracker = initialData?.booked_from_tracker === true;
 
   const {
     register,
@@ -42,13 +46,11 @@ const TimeEntryModal = ({
     },
   });
 
-  const watchedStartTime = watch('start_time');
-  const watchedEndTime = watch('end_time');
-
-  // Set form values when editing or modal opens
+  // Set form values when modal opens
   useEffect(() => {
     if (isOpen) {
       if (isEditing && entry) {
+        // Editing existing entry - populate all fields
         setValue('description', entry.description);
         setValue('duration_seconds', entry.duration_seconds);
         setValue('end_time', new Date(entry.end_time).toISOString().slice(0, 16));
@@ -60,53 +62,55 @@ const TimeEntryModal = ({
           setDurationInputType('duration');
         }
 
-        // Set metadata fields if available
         setValue('project', entry.metadata?.project || '');
         setValue('tags', entry.metadata?.tags?.join(', ') || '');
       } else {
-        // Reset form for new entry
+        // New entry - set end time to now
         const now = new Date();
         setValue('end_time', now.toISOString().slice(0, 16));
         setDurationInputType('duration');
+        
+        // If from tracker, we don't need to prefill anything
+        // Backend will handle duration and start_time automatically
       }
       setError(null);
     }
   }, [isOpen, isEditing, entry, setValue]);
-
-  // Auto-calculate duration when start and end times change
-  useEffect(() => {
-    if (durationInputType === 'times' && watchedStartTime && watchedEndTime) {
-      const start = new Date(watchedStartTime);
-      const end = new Date(watchedEndTime);
-      
-      if (end > start) {
-        const durationMs = end.getTime() - start.getTime();
-        const durationSeconds = Math.floor(durationMs / 1000);
-        setValue('duration_seconds', durationSeconds);
-      }
-    }
-  }, [watchedStartTime, watchedEndTime, durationInputType, setValue]);
 
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
       setError(null);
 
-      // Prepare the entry data
-      const entryData = {
-        description: data.description.trim(),
-        duration_seconds: parseInt(data.duration_seconds),
-        end_time: new Date(data.end_time).toISOString(),
-        booked_from_tracker: false,
-        metadata: {
-          project: data.project?.trim() || '',
-          tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [],
-        },
-      };
+      let entryData;
 
-      // Add start time if provided
-      if (durationInputType === 'times' && data.start_time) {
-        entryData.start_time = new Date(data.start_time).toISOString();
+      if (isFromTracker) {
+        entryData = {
+          description: data.description.trim(),
+          end_time: new Date(data.end_time).toISOString(),
+          booked_from_tracker: true,
+          duration_seconds: 100, // Placeholder, backend calculates actual duration
+          metadata: {
+            project: data.project?.trim() || '',
+            tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+          },
+        };
+      } else {
+        entryData = {
+          description: data.description.trim(),
+          duration_seconds: parseInt(data.duration_seconds),
+          end_time: new Date(data.end_time).toISOString(),
+          booked_from_tracker: false,
+          metadata: {
+            project: data.project?.trim() || '',
+            tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+          },
+        };
+
+        // Add start time if using time-based input
+        if (durationInputType === 'times' && data.start_time) {
+          entryData.start_time = new Date(data.start_time).toISOString();
+        }
       }
 
       // Create or update entry
@@ -150,11 +154,6 @@ const TimeEntryModal = ({
     }
   };
 
-  const toggleDurationInputType = () => {
-    setDurationInputType(prev => prev === 'duration' ? 'times' : 'duration');
-    setError(null);
-  };
-
   const secondsToHours = (seconds) => {
     return (seconds / 3600).toFixed(2);
   };
@@ -164,64 +163,72 @@ const TimeEntryModal = ({
   };
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={handleClose}
-      className="fixed inset-0 z-50 overflow-y-auto"
-    >
+    <Dialog open={isOpen} onClose={handleClose} className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen p-4">
         <DialogBackdrop className="fixed inset-0 bg-black bg-opacity-30" />
         
-        <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+        <DialogPanel className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                {isEditing ? (
-                  <PencilIcon className="w-5 h-5 text-primary-600" />
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                {isFromTracker ? (
+                  <ClockIcon className="w-5 h-5 text-green-600" />
+                ) : isEditing ? (
+                  <PencilIcon className="w-5 h-5 text-blue-600" />
                 ) : (
-                  <PlusIcon className="w-5 h-5 text-primary-600" />
+                  <PlusIcon className="w-5 h-5 text-blue-600" />
                 )}
               </div>
               <div>
                 <DialogTitle className="text-lg font-semibold text-gray-900">
-                  {isEditing ? 'Edit Time Entry' : 'Add Time Entry'}
+                  {isFromTracker ? 'Book Tracked Time' : 
+                   isEditing ? 'Edit Time Entry' : 'Add Time Entry'}
                 </DialogTitle>
                 <p className="text-sm text-gray-500">
-                  {isEditing ? 'Update your time entry details' : 'Manually add a new time entry'}
+                  {isFromTracker ? 'Add description for your tracked time' :
+                   isEditing ? 'Update your time entry details' : 'Manually add a new time entry'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
+            <button onClick={handleClose} disabled={isSubmitting} className="text-gray-400 hover:text-gray-600 transition-colors">
               <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
 
+          {/* Show tracker info banner */}
+          {isFromTracker && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+              <div className="flex items-center">
+                <ClockIcon className="w-4 h-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium text-green-800">
+                  Duration and timing will be calculated automatically from your tracker session
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Error Display */}
           {error && (
-            <div className="mb-4 bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded-lg">
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               <pre className="text-sm whitespace-pre-wrap">{error}</pre>
             </div>
           )}
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Description Field */}
+            {/* Description Field - ALWAYS required */}
             <div className="form-group">
               <label htmlFor="description" className="form-label">
-                Description <span className="text-danger-500">*</span>
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
                 rows={3}
                 className={`form-input resize-none ${
-                  errors.description ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''
+                  errors.description ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                 }`}
-                placeholder="What did you work on?"
+                placeholder={isFromTracker ? "What did you work on during this tracked session?" : "What did you work on?"}
                 {...register('description', {
                   required: 'Description is required',
                   minLength: {
@@ -239,122 +246,98 @@ const TimeEntryModal = ({
               )}
             </div>
 
-            {/* Duration Input Type Toggle */}
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
-                Duration Input Method
-              </label>
-              <button
-                type="button"
-                onClick={toggleDurationInputType}
-                className="text-sm text-primary-600 hover:text-primary-800 font-medium"
-              >
-                Switch to {durationInputType === 'duration' ? 'Start/End Times' : 'Direct Duration'}
-              </button>
-            </div>
+            {/* Show Duration/Time inputs ONLY for manual entries */}
+            {!isFromTracker && (
+              <>
+                {/* Duration Input Type Toggle */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Duration Input Method
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setDurationInputType(prev => prev === 'duration' ? 'times' : 'duration')}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Switch to {durationInputType === 'duration' ? 'Start/End Times' : 'Direct Duration'}
+                  </button>
+                </div>
 
-            {durationInputType === 'duration' ? (
-              /* Duration Input */
-              <div className="form-group">
-                <label htmlFor="duration_hours" className="form-label">
-                  Duration (Hours) <span className="text-danger-500">*</span>
-                </label>
-                <input
-                  id="duration_hours"
-                  type="number"
-                  step="0.25"
-                  min="0"
-                  max="24"
-                  className={`form-input ${
-                    errors.duration_seconds ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''
-                  }`}
-                  placeholder="1.5"
-                  value={secondsToHours(watch('duration_seconds') || 3600)}
-                  onChange={(e) => {
-                    const hours = parseFloat(e.target.value) || 0;
-                    setValue('duration_seconds', hoursToSeconds(hours));
-                  }}
-                />
-                {errors.duration_seconds && (
-                  <p className="form-error">{errors.duration_seconds.message}</p>
+                {/* Duration or Time Inputs */}
+                {durationInputType === 'duration' ? (
+                  <div className="form-group">
+                    <label htmlFor="duration_hours" className="form-label">
+                      Duration (Hours) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="duration_hours"
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="24"
+                      className={`form-input ${
+                        errors.duration_seconds ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
+                      placeholder="1.5"
+                      value={secondsToHours(watch('duration_seconds') || 3600)}
+                      onChange={(e) => {
+                        const hours = parseFloat(e.target.value) || 0;
+                        setValue('duration_seconds', hoursToSeconds(hours));
+                      }}
+                    />
+                    {errors.duration_seconds && (
+                      <p className="form-error">{errors.duration_seconds.message}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter duration in hours (e.g., 1.5 for 1 hour 30 minutes)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label htmlFor="start_time" className="form-label">
+                        Start Time <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="start_time"
+                        type="datetime-local"
+                        className={`form-input ${
+                          errors.start_time ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                        {...register('start_time', {
+                          required: 'Start time is required when using time-based input',
+                        })}
+                      />
+                      {errors.start_time && (
+                        <p className="form-error">{errors.start_time.message}</p>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="end_time" className="form-label">
+                        End Time <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="end_time"
+                        type="datetime-local"
+                        className={`form-input ${
+                          errors.end_time ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                        {...register('end_time', {
+                          required: 'End time is required',
+                        })}
+                      />
+                      {errors.end_time && (
+                        <p className="form-error">{errors.end_time.message}</p>
+                      )}
+                    </div>
+                  </div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter duration in hours (e.g., 1.5 for 1 hour 30 minutes)
-                </p>
-              </div>
-            ) : (
-              /* Start and End Time Inputs */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="form-group">
-                  <label htmlFor="start_time" className="form-label">
-                    Start Time <span className="text-danger-500">*</span>
-                  </label>
-                  <input
-                    id="start_time"
-                    type="datetime-local"
-                    className={`form-input ${
-                      errors.start_time ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''
-                    }`}
-                    {...register('start_time', {
-                      required: 'Start time is required when using time-based input',
-                    })}
-                  />
-                  {errors.start_time && (
-                    <p className="form-error">{errors.start_time.message}</p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="end_time" className="form-label">
-                    End Time <span className="text-danger-500">*</span>
-                  </label>
-                  <input
-                    id="end_time"
-                    type="datetime-local"
-                    className={`form-input ${
-                      errors.end_time ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''
-                    }`}
-                    {...register('end_time', {
-                      required: 'End time is required',
-                      validate: {
-                        notFuture: (value) => {
-                          const endTime = new Date(value);
-                          const now = new Date();
-                          const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-                          return endTime <= fiveMinutesFromNow || 'End time cannot be more than 5 minutes in the future';
-                        },
-                        afterStart: (value) => {
-                          const startTime = watch('start_time');
-                          if (!startTime) return true;
-                          const start = new Date(startTime);
-                          const end = new Date(value);
-                          return end > start || 'End time must be after start time';
-                        },
-                      },
-                    })}
-                  />
-                  {errors.end_time && (
-                    <p className="form-error">{errors.end_time.message}</p>
-                  )}
-                </div>
-              </div>
+              </>
             )}
 
-            {/* Calculated Duration Display */}
-            {watch('duration_seconds') > 0 && (
-              <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
-                <div className="flex items-center">
-                  <ClockIcon className="w-4 h-4 text-primary-600 mr-2" />
-                  <span className="text-sm font-medium text-primary-800">
-                    Duration: {formatTime(watch('duration_seconds') || 0)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Optional Fields */}
+            {/* Project and Tags - ALWAYS available */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Project Field */}
               <div className="form-group">
                 <label htmlFor="project" className="form-label">
                   Project
@@ -364,19 +347,10 @@ const TimeEntryModal = ({
                   type="text"
                   className="form-input"
                   placeholder="Project name"
-                  {...register('project', {
-                    maxLength: {
-                      value: 100,
-                      message: 'Project name too long',
-                    },
-                  })}
+                  {...register('project')}
                 />
-                {errors.project && (
-                  <p className="form-error">{errors.project.message}</p>
-                )}
               </div>
 
-              {/* Tags Field */}
               <div className="form-group">
                 <label htmlFor="tags" className="form-label">
                   Tags
@@ -412,16 +386,18 @@ const TimeEntryModal = ({
                 {isSubmitting ? (
                   <>
                     <div className="loading-spinner"></div>
-                    <span>{isEditing ? 'Updating...' : 'Creating...'}</span>
+                    <span>{isFromTracker ? 'Booking...' : isEditing ? 'Updating...' : 'Creating...'}</span>
                   </>
                 ) : (
                   <>
-                    {isEditing ? (
+                    {isFromTracker ? (
+                      <ClockIcon className="w-4 h-4" />
+                    ) : isEditing ? (
                       <PencilIcon className="w-4 h-4" />
                     ) : (
                       <PlusIcon className="w-4 h-4" />
                     )}
-                    <span>{isEditing ? 'Update Entry' : 'Create Entry'}</span>
+                    <span>{isFromTracker ? 'Book Time' : isEditing ? 'Update Entry' : 'Create Entry'}</span>
                   </>
                 )}
               </button>
@@ -431,10 +407,13 @@ const TimeEntryModal = ({
           {/* Helper Text */}
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-600">
-              💡 <strong>Tip:</strong> You can input duration directly (in hours) or use start/end times for automatic calculation.
+              💡 <strong>Tip:</strong> {isFromTracker 
+                ? 'The duration and timing are automatically calculated from your tracker session.'
+                : 'You can input duration directly (in hours) or use start/end times for automatic calculation.'
+              }
             </p>
           </div>
-        </div>
+        </DialogPanel>
       </div>
     </Dialog>
   );

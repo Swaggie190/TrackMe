@@ -7,6 +7,7 @@ from rest_framework_mongoengine import serializers as me_serializers
 from django.contrib.auth import authenticate
 from .models import User, TimeEntry, TrackerSession
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 class UserRegistrationSerializer(serializers.Serializer):
@@ -133,7 +134,9 @@ class TimeEntrySerializer(me_serializers.DocumentSerializer):
     def validate_end_time(self, value):
     
         if value:
-            now = datetime.utcnow()
+            now = timezone.now()
+            if value.tzinfo is None:
+                value = timezone.make_aware(value)
             max_future = now + timedelta(minutes=5)
             if value > max_future:
                 raise serializers.ValidationError(
@@ -159,19 +162,25 @@ class TimeEntrySerializer(me_serializers.DocumentSerializer):
 
 
 class TimeEntryCreateSerializer(TimeEntrySerializer):
+    """
+    Serializer for creating time entries with validation logic
+    """
+    
+    class Meta:
+        model = TimeEntry
+        fields = [
+            'id', 'description', 'duration_seconds', 'start_time', 'end_time', 
+            'booked_from_tracker', 'metadata', 'created_at', 'duration_display'
+        ]
+        read_only_fields = ['id', 'created_at', 'duration_display']
     
     def validate(self, data):
-        """
-        Custom validation for time entry creation
-        """
         booked_from_tracker = data.get('booked_from_tracker', False)
         
         if booked_from_tracker:
-            # duration_seconds is computed from start and end times
             if 'duration_seconds' in data:
                 data.pop('duration_seconds') 
         else:
-            # Manual entry requires duration_seconds and end_time
             if 'duration_seconds' not in data:
                 raise serializers.ValidationError(
                     "Duration is required for manual time entries."
@@ -180,6 +189,22 @@ class TimeEntryCreateSerializer(TimeEntrySerializer):
             if 'end_time' not in data:
                 raise serializers.ValidationError(
                     "End time is required for manual time entries."
+                )
+        if 'start_time' in data and 'end_time' in data and data['start_time'] and data['end_time']:
+            start_time = data['start_time']
+            end_time = data['end_time']
+        
+            if start_time.tzinfo is None:
+                start_time = timezone.make_aware(start_time)
+                data['start_time'] = start_time
+            
+            if end_time.tzinfo is None:
+                end_time = timezone.make_aware(end_time)
+                data['end_time'] = end_time
+      
+            if start_time >= end_time:
+                raise serializers.ValidationError(
+                    "Start time must be before end time."
                 )
         
         return data

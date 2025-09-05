@@ -13,6 +13,7 @@ from .serializers import (
     TimeEntrySerializer, TimeEntryCreateSerializer, TimeEntryListSerializer,
     TrackerSessionSerializer, TrackerStatusSerializer, TrackerActionSerializer
 )
+from django.utils import timezone
 
 
 class UserRegistrationView(APIView):
@@ -251,7 +252,7 @@ class TrackerView(APIView):
         except TrackerSession.DoesNotExist:
             tracker = TrackerSession(
                 user=user,
-                started_at=datetime.utcnow(),
+                started_at=timezone.now(),
                 is_running=False
             )
             tracker.save()
@@ -282,7 +283,7 @@ class TrackerView(APIView):
         
         if action == 'start':
             if not tracker.is_running:
-                tracker.started_at = datetime.utcnow()
+                tracker.started_at = timezone.now()
                 tracker.paused_at = None
                 tracker.is_running = True
                 tracker.save()

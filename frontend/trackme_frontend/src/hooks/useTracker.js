@@ -16,7 +16,6 @@ export const useTracker = () => {
   const intervalRef = useRef(null);
   const syncIntervalRef = useRef(null);
 
-  // Load initial tracker state
   const loadTrackerStatus = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -33,7 +32,6 @@ export const useTracker = () => {
     }
   }, []);
 
-  // Start local timer
   const startLocalTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -44,7 +42,6 @@ export const useTracker = () => {
     }, 1000);
   }, []);
 
-  // Stop local timer
   const stopLocalTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -52,7 +49,6 @@ export const useTracker = () => {
     }
   }, []);
 
-  // Sync with server
   const syncWithServer = useCallback(async () => {
     try {
       const status = await api.tracker.getStatus();
@@ -63,7 +59,6 @@ export const useTracker = () => {
     }
   }, []);
 
-  // Start sync interval
   const startSyncInterval = useCallback(() => {
     if (syncIntervalRef.current) {
       clearInterval(syncIntervalRef.current);
@@ -72,7 +67,6 @@ export const useTracker = () => {
     syncIntervalRef.current = setInterval(syncWithServer, 30000); // Sync every 30 seconds
   }, [syncWithServer]);
 
-  // Stop sync interval
   const stopSyncInterval = useCallback(() => {
     if (syncIntervalRef.current) {
       clearInterval(syncIntervalRef.current);
@@ -80,7 +74,6 @@ export const useTracker = () => {
     }
   }, []);
 
-  // Tracker actions
   const startTracker = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -145,12 +138,10 @@ export const useTracker = () => {
     }
   }, []);
 
-  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Effect to manage timer and sync intervals
   useEffect(() => {
     if (trackerState.is_running) {
       startLocalTimer();
@@ -166,30 +157,26 @@ export const useTracker = () => {
     };
   }, [trackerState.is_running, startLocalTimer, stopLocalTimer, startSyncInterval, stopSyncInterval]);
 
-  // Load initial state on mount
   useEffect(() => {
     loadTrackerStatus();
   }, [loadTrackerStatus]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopLocalTimer();
       stopSyncInterval();
     };
   }, [stopLocalTimer, stopSyncInterval]);
-
-  // Get display seconds 
+ 
   const displaySeconds = trackerState.is_running ? localSeconds : trackerState.current_elapsed_seconds;
 
   return {
-    // State
+
     trackerState,
     displaySeconds,
     isLoading,
     error,
 
-    // Actions
     startTracker,
     pauseTracker,
     resumeTracker,
@@ -197,7 +184,6 @@ export const useTracker = () => {
     loadTrackerStatus,
     clearError,
 
-    // Utilities
     syncWithServer,
   };
 };

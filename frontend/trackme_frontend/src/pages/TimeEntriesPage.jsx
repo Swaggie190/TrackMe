@@ -16,29 +16,25 @@ import SearchAndFilters from '../components/entries/SearchAndFilters';
 import Pagination from '../components/common/Pagination';
 
 const TimeEntriesPage = () => {
-  // State management
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   
-  // Filters and search
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     start_date: '',
     end_date: '',
     booked_from_tracker: '',
   });
-  
-  // Modal states
+
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [deletingEntry, setDeletingEntry] = useState(null);
 
   const notifications = useNotifications();
 
-  // Load entries on component mount and when filters change
   useEffect(() => {
     loadEntries();
   }, [currentPage, searchQuery, filters]);
@@ -55,7 +51,6 @@ const TimeEntriesPage = () => {
         end_date: filters.end_date || undefined,
       };
 
-      // Add boolean filter if specified
       if (filters.booked_from_tracker !== '') {
         params.booked_from_tracker = filters.booked_from_tracker === 'true';
       }
@@ -109,7 +104,7 @@ const TimeEntriesPage = () => {
   const handleModalSuccess = () => {
     setShowEntryModal(false);
     setEditingEntry(null);
-    loadEntries(); // Refresh the list
+    loadEntries(); 
     notifications.success(
       editingEntry ? 'Time entry updated successfully' : 'Time entry created successfully'
     );
@@ -199,7 +194,7 @@ const TimeEntriesPage = () => {
         onFiltersChange={handleFiltersChange}
       />
 
-      {/* Entries List */}
+      {/* Entries */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -219,7 +214,6 @@ const TimeEntriesPage = () => {
           </div>
         ) : entries.length > 0 ? (
           <>
-            {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
@@ -295,7 +289,7 @@ const TimeEntriesPage = () => {
               </table>
             </div>
 
-            {/* Mobile Card View */}
+            {/* Mobile View */}
             <div className="md:hidden divide-y divide-gray-200">
               {entries.map((entry) => (
                 <div key={entry.id} className="p-4 hover:bg-gray-50 transition-colors">

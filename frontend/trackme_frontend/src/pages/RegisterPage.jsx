@@ -40,18 +40,15 @@ const RegisterPage = () => {
 
   const password = watch('password');
 
-  // Clear auth errors when component unmounts
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
 
-  // Handle form submission
   const onSubmit = async (data) => {
     try {
       clearError();
       clearErrors();
 
-      // Check terms acceptance
       if (!acceptTerms) {
         notifications.error('Please accept the Terms of Service to continue');
         return;
@@ -67,7 +64,6 @@ const RegisterPage = () => {
         notifications.success('Account created successfully! Welcome to TrackMe!');
         navigate('/dashboard', { replace: true });
       } else {
-        // Handle registration errors
         if (result.error.includes('email')) {
           setError('email', { 
             type: 'server', 
@@ -95,7 +91,6 @@ const RegisterPage = () => {
     }
   };
 
-  // Password strength checker
   const getPasswordStrength = (password) => {
     if (!password) return { score: 0, text: '', color: '' };
     
@@ -156,7 +151,6 @@ const RegisterPage = () => {
 
         {/* Registration Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-2xl border border-gray-200">
-          {/* Show auth error if exists */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
@@ -167,7 +161,6 @@ const RegisterPage = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Display Name Field */}
             <div>
               <label htmlFor="display_name" className="form-label">
                 Display Name
@@ -204,7 +197,6 @@ const RegisterPage = () => {
               )}
             </div>
 
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="form-label">
                 Email Address
@@ -233,7 +225,6 @@ const RegisterPage = () => {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="form-label">
                 Password
@@ -268,8 +259,7 @@ const RegisterPage = () => {
                   )}
                 </button>
               </div>
-              
-              {/* Password Strength Indicator */}
+
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
@@ -298,7 +288,6 @@ const RegisterPage = () => {
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirm_password" className="form-label">
                 Confirm Password
@@ -402,26 +391,12 @@ const RegisterPage = () => {
               )}
             </button>
           </form>
-
-          {/* Demo Mode Notice */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="text-center">
-              <p className="text-xs text-gray-500 font-medium mb-2">
-                🚧 Demo Mode
-              </p>
-              <p className="text-xs text-gray-500">
-                Registration form is ready! Once your backend is connected,
-                <br />
-                new accounts will be created and users auto-logged in.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            Your account will be created with industry-standard security
+            Your account will be created with high level security
           </p>
           <div className="mt-2 flex items-center justify-center space-x-4 text-xs text-gray-400">
             <span>• Password encryption</span>

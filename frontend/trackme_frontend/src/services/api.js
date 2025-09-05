@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-// Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,7 +9,6 @@ const apiClient = axios.create({
   },
 });
 
-// Token management functions
 export const tokenManager = {
   getAccessToken: () => localStorage.getItem('access_token'),
   getRefreshToken: () => localStorage.getItem('refresh_token'),
@@ -28,7 +26,6 @@ export const tokenManager = {
   }
 };
 
-// Add request interceptor to attach auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = tokenManager.getAccessToken();
@@ -42,7 +39,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor for token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -123,12 +119,11 @@ const api = {
     },
   },
 
-  // Statistics endpoints - NEW
+  // Statistics endpoints
+  // stats are calculated client-side
   stats: {
     getDashboardStats: async () => {
       try {
-        // For now, calculate stats on the frontend since backend might not have this endpoint
-        // This is a fallback implementation that can be replaced when backend stats are ready
         const response = await api.timeEntries.getAll({ page_size: 1000 });
         const entries = response.results || [];
 
@@ -184,12 +179,6 @@ const api = {
         };
       }
     },
-
-    // When backend implements proper stats endpoints, replace above with:
-    // getDashboardStats: async () => {
-    //   const response = await apiClient.get('/stats/dashboard/');
-    //   return response.data;
-    // },
   },
 
   // Tracker endpoints
@@ -247,40 +236,9 @@ const api = {
       return true;
     },
   },
-
-  // Export endpoints - NEW
-  export: {
-    csv: async (filters = {}) => {
-      const response = await apiClient.get('/time-entries/export/csv/', { 
-        params: filters,
-        responseType: 'blob'
-      });
-      return response.data;
-    },
-    
-    json: async (filters = {}) => {
-      const response = await apiClient.get('/time-entries/export/json/', { 
-        params: filters
-      });
-      return response.data;
-    },
-  },
-
-  // System endpoints - NEW
-  system: {
-    health: async () => {
-      const response = await apiClient.get('/health/');
-      return response.data;
-    },
-    
-    version: async () => {
-      const response = await apiClient.get('/version/');
-      return response.data;
-    },
-  },
 };
 
-// Error handling helper
+// Error handling 
 export const handleApiError = (error) => {
   if (error.response) {
     const { status, data } = error.response;
@@ -332,7 +290,7 @@ export const handleApiError = (error) => {
   };
 };
 
-// Time formatting helpers
+// Time formatting
 export const formatTime = (seconds) => {
   if (!seconds || seconds < 0) return '00:00:00';
   
@@ -343,7 +301,7 @@ export const formatTime = (seconds) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-// Date formatting helpers
+// Date formatting
 export const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -370,26 +328,10 @@ export const formatDateTime = (dateString) => {
   });
 };
 
-// Duration helpers - NEW
-export const parseDurationString = (durationStr) => {
-  // Parse "HH:MM:SS" or "HH:MM" format into seconds
-  if (!durationStr) return 0;
-  
-  const parts = durationStr.split(':').map(p => parseInt(p, 10));
-  if (parts.length === 2) {
-    // HH:MM format
-    return (parts[0] * 3600) + (parts[1] * 60);
-  } else if (parts.length === 3) {
-    // HH:MM:SS format
-    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-  }
-  
-  return 0;
-};
 
 export const secondsToHours = (seconds) => {
   if (!seconds || seconds < 0) return 0;
-  return Math.round((seconds / 3600) * 100) / 100; // Round to 2 decimal places
+  return Math.round((seconds / 3600) * 100) / 100;
 };
 
 export const hoursToSeconds = (hours) => {
@@ -397,11 +339,6 @@ export const hoursToSeconds = (hours) => {
   return Math.round(hours * 3600);
 };
 
-// Validation helpers - NEW
-export const validateEmail = (email) => {
-  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-  return emailRegex.test(email);
-};
 
 export const validateTimeEntry = (entry) => {
   const errors = {};

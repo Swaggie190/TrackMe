@@ -20,7 +20,6 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const notifications = useNotifications();
 
-  // State for dashboard data
   const [stats, setStats] = useState({
     total_entries: 0,
     total_hours: 0,
@@ -32,11 +31,9 @@ const DashboardPage = () => {
   const [recentEntries, setRecentEntries] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Time entry modal state
   const [showTimeEntryModal, setShowTimeEntryModal] = useState(false);
   const [timeEntryData, setTimeEntryData] = useState(null);
 
-  // Load dashboard data on mount
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -44,11 +41,10 @@ const DashboardPage = () => {
   const loadDashboardData = async () => {
     try {
       setIsLoadingData(true);
-      
-      // Load stats and recent entries in parallel
+    
       const [statsResponse, entriesResponse] = await Promise.all([
         api.stats.getDashboardStats(),
-        api.timeEntries.getAll({ page: 1, page_size: 5 }) // Get 5 most recent
+        api.timeEntries.getAll({ page: 1, page_size: 5 }) 
       ]);
 
       setStats(statsResponse);
@@ -67,23 +63,19 @@ const DashboardPage = () => {
     notifications.success('Dashboard data updated');
   };
 
-  // Handle booking time from tracker
   const handleBookTime = (trackerData) => {
     setTimeEntryData(trackerData);
     setShowTimeEntryModal(true);
   };
 
-  // Handle successful time entry creation
   const handleTimeEntrySuccess = async () => {
     setShowTimeEntryModal(false);
     setTimeEntryData(null);
     
-    // Refresh dashboard data to show the new entry
     await loadDashboardData();
     notifications.success('Time entry saved successfully');
   };
 
-  // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -117,14 +109,11 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Timer */}
         <div className="lg:col-span-2">
           <Tracker onBookTime={handleBookTime} />
         </div>
 
-        {/* Right Column - Quick Stats */}
         <div className="space-y-6">
-          {/* Today's Progress */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Today's Progress</h3>
@@ -146,7 +135,6 @@ const DashboardPage = () => {
                 </span>
               </div>
 
-              {/* Progress bar for daily goal (assuming 8 hours) */}
               <div>
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>Daily Goal Progress</span>
@@ -164,7 +152,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             
@@ -215,7 +202,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
@@ -274,7 +260,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Recent Entries */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Recent Time Entries</h2>
@@ -377,7 +362,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Time Entry Modal */}
       <TimeEntryModal
         isOpen={showTimeEntryModal}
         onClose={() => {

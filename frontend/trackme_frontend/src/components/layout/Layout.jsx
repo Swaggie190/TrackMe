@@ -55,7 +55,7 @@ const Layout = ({ children }) => {
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            {/* Logo and desktop navigation */}
+   
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 <Link to="/dashboard" className="text-2xl font-bold text-primary-600">
@@ -84,7 +84,6 @@ const Layout = ({ children }) => {
 
             {/* User menu and mobile menu button */}
             <div className="flex items-center space-x-4">
-              {/* User info */}
               <div className="hidden lg:flex items-center text-sm text-gray-600">
                 <span>Welcome, {user?.display_name || 'User'}</span>
               </div>
@@ -132,7 +131,6 @@ const Layout = ({ children }) => {
               </Link>
             ))}
             
-            {/* Mobile user info and logout */}
             <div className="border-t border-gray-200 pt-3 mt-3">
               <div className="px-3 py-2 text-sm text-gray-600">
                 Welcome, {user?.display_name || 'User'}

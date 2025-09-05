@@ -11,10 +11,6 @@ from django.utils import timezone
 
 
 class User(Document):
-    """
-    User document for authentication and profile information
-    """
-    
     email = EmailField(required=True, unique=True, max_length=254)
     password_hash = StringField(required=True, max_length=255)
     display_name = StringField(required=True, min_length=2, max_length=100)
@@ -49,10 +45,6 @@ class User(Document):
 
 
 class TimeEntry(Document):
-    """
-    This stores both manually created entries and entries booked from tracker
-    """
-
     user = ReferenceField(User, required=True, reverse_delete_rule=2) 
     description = StringField(required=True, min_length=3, max_length=1000)
     duration_seconds = IntField(required=True, min_value=1)  # Must be positive
@@ -104,9 +96,6 @@ class TimeEntry(Document):
             raise ValidationError("Description cannot be empty or only whitespace")
     @property
     def duration_display(self):
-        """
-        Convert seconds to HH:MM:SS format for display
-        """
         hours, remainder = divmod(self.duration_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
@@ -116,14 +105,6 @@ class TimeEntry(Document):
 
 
 class TrackerSession(Document):
-    """
-    Document to persist running tracker sessions
-    
-    This allows users to maintain tracker state across browser sessions
-    and prevents data loss
-    """
-    
-    # Each user can have only one active tracker session
     user = ReferenceField(User, required=True, unique=True, reverse_delete_rule=2) 
     
     started_at = DateTimeField(required=True)

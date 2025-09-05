@@ -1,6 +1,3 @@
-"""
-URL patterns for timetracking app
-"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -10,7 +7,6 @@ from .views import (
     TimeEntryViewSet, TrackerView
 )
 
-# Router for ViewSets
 router = DefaultRouter()
 router.register(r'time-entries', TimeEntryViewSet, basename='timeentry')
 
@@ -30,6 +26,6 @@ urlpatterns = [
     path('tracker/resume/', TrackerView.as_view(), name='tracker_action'),
     path('tracker/reset/', TrackerView.as_view(), name='tracker_action'),
     
-    # Include router URLs (time-entries endpoints)
+    #to include for the time entries
     path('', include(router.urls)),
 ]

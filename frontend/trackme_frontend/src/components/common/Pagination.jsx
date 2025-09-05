@@ -19,18 +19,16 @@ const Pagination = ({
   
   if (totalPages <= 1) return null;
 
-  // Generate page numbers to show
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 7;
     
     if (totalPages <= maxVisiblePages) {
-      // Show all pages if total is small
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Show smart pagination with ellipsis
+
       const startPages = [1, 2];
       const endPages = [totalPages - 1, totalPages];
       const middleStart = Math.max(3, currentPage - 1);
@@ -55,7 +53,7 @@ const Pagination = ({
       pages.push(...endPages);
     }
     
-    return [...new Set(pages)]; // Remove duplicates
+    return [...new Set(pages)];
   };
 
   const pageNumbers = getPageNumbers();
@@ -71,7 +69,6 @@ const Pagination = ({
   const goToFirst = () => goToPage(1);
   const goToLast = () => goToPage(totalPages);
 
-  // Calculate showing range
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalCount);
 

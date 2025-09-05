@@ -30,7 +30,6 @@ export const NotificationProvider = ({ children }) => {
 
     setNotifications(prev => [...prev, newNotification]);
 
-    // Auto-remove after duration
     if (newNotification.duration > 0) {
       setTimeout(() => {
         removeNotification(id);
@@ -56,7 +55,7 @@ export const NotificationProvider = ({ children }) => {
     return addNotification({
       type: 'error',
       message,
-      duration: 8000, // Errors stay longer
+      duration: 8000,
       ...options,
     });
   }, [addNotification]);
@@ -185,7 +184,6 @@ const NotificationItem = ({ notification, onClose }) => {
   );
 };
 
-// Utility hook for common tracker notifications
 export const useTrackerNotifications = () => {
   const notifications = useNotifications();
 

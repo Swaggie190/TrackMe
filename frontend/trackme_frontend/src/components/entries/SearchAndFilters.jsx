@@ -49,7 +49,6 @@ const SearchAndFilters = ({
 
   const hasActiveFilters = Object.values(localFilters).some(value => value !== '');
 
-  // Get date range presets
   const getDatePreset = (preset) => {
     const now = new Date();
     let start, end;

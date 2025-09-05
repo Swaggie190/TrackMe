@@ -5,21 +5,12 @@ from .models import User as MongoUser
 
 
 class EmailBasedJWTAuthentication(JWTAuthentication):
-    """
-    Custom JWT authentication that uses email instead of user ID
-    """
-    
     def get_user(self, validated_token):
-        """
-        Get Django User from JWT token using email
-        """
         try:
-            # Get email from the token
             user_email = validated_token.get('email')
             if not user_email:
                 raise InvalidToken('Token does not contain email')
             
-            # Find or create Django user with this email
             django_user, created = DjangoUser.objects.get_or_create(
                 username=user_email,
                 defaults={

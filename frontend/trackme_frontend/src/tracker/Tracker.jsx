@@ -26,12 +26,10 @@ const Tracker = ({ onBookTime }) => {
   const [actionLoading, setActionLoading] = useState(null);
   const notifications = useNotifications();
 
-  // Load initial status on mount
   useEffect(() => {
     loadTrackerStatus();
   }, [loadTrackerStatus]);
 
-  // Show error notifications
   useEffect(() => {
     if (error) {
       notifications.error(error);
@@ -95,8 +93,7 @@ const Tracker = ({ onBookTime }) => {
       notifications.warning('No time to book. Start the timer first.');
       return;
     }
-    
-    // Call parent function to open time entry modal
+
     onBookTime({
       duration_seconds: localSeconds,
       booked_from_tracker: true,
@@ -143,7 +140,6 @@ const Tracker = ({ onBookTime }) => {
 
       {/* Action Buttons */}
       <div className="space-y-4">
-        {/* Primary Action Button */}
         <div className="flex justify-center">
           {!trackerState.is_running ? (
             <button
@@ -184,9 +180,7 @@ const Tracker = ({ onBookTime }) => {
           )}
         </div>
 
-        {/* Secondary Actions */}
         <div className="flex justify-center space-x-3">
-          {/* Reset Button */}
           <button
             onClick={handleReset}
             disabled={actionLoading === 'reset'}
@@ -206,7 +200,6 @@ const Tracker = ({ onBookTime }) => {
             )}
           </button>
 
-          {/* Book Time Button */}
           <button
             onClick={handleBookTime}
             disabled={localSeconds === 0}

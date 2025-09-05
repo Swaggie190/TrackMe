@@ -33,12 +33,10 @@ const LoginPage = () => {
     }
   });
 
-  // Clear auth errors when component unmounts or when user starts typing
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
 
-  // Handle form submission
   const onSubmit = async (data) => {
     try {
       clearError();
@@ -51,13 +49,11 @@ const LoginPage = () => {
       });
 
       if (result.success) {
-        // Get the redirect path or default to dashboard
         const from = location.state?.from?.pathname || '/dashboard';
         
         notifications.success('Welcome back!');
         navigate(from, { replace: true });
       } else {
-        // Handle login errors
         if (result.error.includes('email')) {
           setError('email', { 
             type: 'server', 
@@ -77,7 +73,6 @@ const LoginPage = () => {
     }
   };
 
-  // Toggle password visibility
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -102,7 +97,6 @@ const LoginPage = () => {
 
         {/* Login Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-2xl border border-gray-200">
-          {/* Show auth error if exists */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
@@ -113,7 +107,6 @@ const LoginPage = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="form-label">
                 Email Address
@@ -142,7 +135,6 @@ const LoginPage = () => {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="form-label">
                 Password
@@ -182,7 +174,6 @@ const LoginPage = () => {
               )}
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -211,7 +202,6 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting || isLoading}
@@ -231,20 +221,6 @@ const LoginPage = () => {
               )}
             </button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="text-center">
-              <p className="text-xs text-gray-500 font-medium mb-2">
-                🚧 Demo Mode
-              </p>
-              <p className="text-xs text-gray-500">
-                Use any email/password combination to test the login flow.
-                <br />
-                Real authentication will be connected once your backend is ready.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
@@ -259,7 +235,6 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Coming from protected route message */}
         {location.state?.from && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700 text-center">

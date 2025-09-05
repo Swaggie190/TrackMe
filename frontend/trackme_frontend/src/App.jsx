@@ -10,7 +10,7 @@ import Layout from './components/layout/Layout';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
+import DashboardPage from './pages/DashBoardPage';
 import TimeEntriesPage from './pages/TimeEntriesPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';

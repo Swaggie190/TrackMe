@@ -46,11 +46,9 @@ const TimeEntryModal = ({
     },
   });
 
-  // Set form values when modal opens
   useEffect(() => {
     if (isOpen) {
       if (isEditing && entry) {
-        // Editing existing entry - populate all fields
         setValue('description', entry.description);
         setValue('duration_seconds', entry.duration_seconds);
         setValue('end_time', new Date(entry.end_time).toISOString().slice(0, 16));
@@ -65,13 +63,9 @@ const TimeEntryModal = ({
         setValue('project', entry.metadata?.project || '');
         setValue('tags', entry.metadata?.tags?.join(', ') || '');
       } else {
-        // New entry - set end time to now
         const now = new Date();
         setValue('end_time', now.toISOString().slice(0, 16));
         setDurationInputType('duration');
-        
-        // If from tracker, we don't need to prefill anything
-        // Backend will handle duration and start_time automatically
       }
       setError(null);
     }
@@ -89,7 +83,7 @@ const TimeEntryModal = ({
           description: data.description.trim(),
           end_time: new Date(data.end_time).toISOString(),
           booked_from_tracker: true,
-          duration_seconds: 100, // Placeholder, backend calculates actual duration
+          duration_seconds: 100,
           metadata: {
             project: data.project?.trim() || '',
             tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [],
@@ -107,13 +101,11 @@ const TimeEntryModal = ({
           },
         };
 
-        // Add start time if using time-based input
         if (durationInputType === 'times' && data.start_time) {
           entryData.start_time = new Date(data.start_time).toISOString();
         }
       }
 
-      // Create or update entry
       if (isEditing) {
         await api.timeEntries.update(entry.id, entryData);
       } else {
@@ -124,8 +116,7 @@ const TimeEntryModal = ({
       onSuccess();
     } catch (err) {
       console.error('Failed to save time entry:', err);
-      
-      // Handle validation errors
+
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else if (err.response?.data) {
@@ -217,7 +208,6 @@ const TimeEntryModal = ({
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Description Field - ALWAYS required */}
             <div className="form-group">
               <label htmlFor="description" className="form-label">
                 Description <span className="text-red-500">*</span>
@@ -246,10 +236,8 @@ const TimeEntryModal = ({
               )}
             </div>
 
-            {/* Show Duration/Time inputs ONLY for manual entries */}
             {!isFromTracker && (
               <>
-                {/* Duration Input Type Toggle */}
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
                     Duration Input Method
@@ -263,7 +251,6 @@ const TimeEntryModal = ({
                   </button>
                 </div>
 
-                {/* Duration or Time Inputs */}
                 {durationInputType === 'duration' ? (
                   <div className="form-group">
                     <label htmlFor="duration_hours" className="form-label">
@@ -336,7 +323,6 @@ const TimeEntryModal = ({
               </>
             )}
 
-            {/* Project and Tags - ALWAYS available */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="form-group">
                 <label htmlFor="project" className="form-label">
@@ -368,7 +354,6 @@ const TimeEntryModal = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex space-x-3 pt-4">
               <button
                 type="button"
@@ -404,7 +389,6 @@ const TimeEntryModal = ({
             </div>
           </form>
 
-          {/* Helper Text */}
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-600">
               💡 <strong>Tip:</strong> {isFromTracker 

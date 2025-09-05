@@ -17,16 +17,10 @@ from django.utils import timezone
 
 
 class UserRegistrationView(APIView):
-    """
-    Handle user registration
-    """
+
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
-
-        print(f"🔍 Registration request data: {request.data}")
-        print(f"🔍 Request content type: {request.content_type}")
-     
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -44,22 +38,14 @@ class UserRegistrationView(APIView):
                     }
                 }, status=status.HTTP_201_CREATED)
             except Exception as e:
-                print(f"🚨 Error creating user: {e}")
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
-            print(f"❌ Serializer validation failed: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
-    """
-    Handle user login
-    """
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
-        """
-        Authenticate user and return JWT tokens
-        """
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
@@ -81,17 +67,9 @@ class UserLoginView(APIView):
 
 
 class UserProfileView(APIView):
-    """
-    Handle user profile operations
-
-    """
     permission_classes = [permissions.IsAuthenticated]
     
     def get_user_object(self):
-        """
-        Get user from JWT token
-        """
-
         try:
             user_email = self.request.user.username  
             return User.objects.get(email=user_email)
@@ -99,17 +77,11 @@ class UserProfileView(APIView):
             raise Http404("User not found")
     
     def get(self, request):
-        """
-        Get current user profile
-        """
         user = self.get_user_object()
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
     
     def put(self, request):
-        """
-        Update user profile
-        """
         user = self.get_user_object()
         serializer = UserProfileSerializer(user, data=request.data, partial=True)
         
@@ -124,10 +96,6 @@ class UserProfileView(APIView):
 
 
 class TimeEntryViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for time entries CRUD operations
-
-    """
     serializer_class = TimeEntrySerializer
     permission_classes = [permissions.IsAuthenticated]
     
@@ -162,15 +130,12 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
     
     def get_user_object(self):
         try:
-            # Get email from authenticated Django user
             user_email = self.request.user.email
             if not user_email:
                 user_email = self.request.user.username
                 
             if not user_email:
                 raise Http404("No email found for authenticated user")
-                
-            # Find corresponding MongoEngine user
             return User.objects.get(email=user_email)
             
         except User.DoesNotExist:
@@ -180,9 +145,6 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
         
     
     def get_serializer_class(self):
-        """
-        Use different serializers for different actions
-        """
         if self.action == 'create':
             return TimeEntryCreateSerializer
         elif self.action == 'list':
@@ -190,9 +152,7 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
         return TimeEntrySerializer
     
     def perform_create(self, serializer):
-        """
-        Custom create logic to handle tracker booking
-        """
+
         user = self.get_user_object()
         
         if serializer.validated_data.get('booked_from_tracker', False):
@@ -201,40 +161,48 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
             serializer.save(user=user)
     
     def _book_from_tracker(self, user, serializer):
-        """
-        Book time from the user's active tracker session
-        """
         try:
             tracker = TrackerSession.objects.get(user=user)
-        
             duration_seconds = tracker.get_current_elapsed_seconds()
             
             if duration_seconds <= 0:
                 raise ValueError("No time tracked to book")
-
             original_start_time = tracker.started_at
+            current_end_time = timezone.now()
+            if original_start_time.tzinfo is None:
+                original_start_time = timezone.make_aware(original_start_time)
+            
+            validated_data = serializer.validated_data.copy()
+
+            fields_to_remove = ['end_time', 'booked_from_tracker', 'duration_seconds', 'start_time', 'user']
+            for field in fields_to_remove:
+                validated_data.pop(field, None) 
+
+            if 'end_time' in validated_data:
+                validated_data.pop('end_time')
+            
             serializer.save(
                 user=user,
                 duration_seconds=duration_seconds,
                 start_time=original_start_time,
-                booked_from_tracker=True
+                end_time=current_end_time, 
+                booked_from_tracker=True,
+                **validated_data 
             )
-      
+
             tracker.reset()
             tracker.save()
             
         except TrackerSession.DoesNotExist:
             raise ValueError("No active tracker session found")
+        except Exception as e:
+            raise
 
 
 class TrackerView(APIView):
-    """
-    Handle tracker operations: start, pause, resume, reset
-    """
     permission_classes = [permissions.IsAuthenticated]
     
     def get_user_object(self):
-        """Helper to get MongoEngine User from JWT"""
         try:
             user_email = self.request.user.username
             return User.objects.get(email=user_email)
@@ -242,9 +210,6 @@ class TrackerView(APIView):
             raise Http404("User not found")
     
     def get_or_create_tracker(self, user):
-        """
-        Get existing tracker or create new one for user
-        """
         try:
             return TrackerSession.objects.get(user=user)
         except TrackerSession.DoesNotExist:
@@ -257,9 +222,6 @@ class TrackerView(APIView):
             return tracker
     
     def get(self, request):
-        """
-        Get current tracker status
-        """
         user = self.get_user_object()
         tracker = self.get_or_create_tracker(user)
         
@@ -271,9 +233,6 @@ class TrackerView(APIView):
         })
     
     def post(self, request):
-        """
-        Handle tracker actions: start, pause, resume, reset
-        """
         user = self.get_user_object()
         tracker = self.get_or_create_tracker(user)
         

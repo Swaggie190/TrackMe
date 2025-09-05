@@ -1,7 +1,3 @@
-"""
-Serializers for TrackMe API
-"""
-
 from rest_framework import serializers
 from rest_framework_mongoengine import serializers as me_serializers
 from django.contrib.auth import authenticate
@@ -25,9 +21,6 @@ class UserRegistrationSerializer(serializers.Serializer):
             return email
     
     def validate_password(self, value):
-        """
-        Password strength validation
-        """
         if value.isdigit():
             raise serializers.ValidationError("Password cannot be entirely numeric.")
         if len(value.strip()) != len(value):
@@ -35,9 +28,6 @@ class UserRegistrationSerializer(serializers.Serializer):
         return value
     
     def create(self, validated_data):
-        """
-        Create and return a new user instance
-        """
         user = User(
             email=validated_data['email'],
             display_name=validated_data['display_name']
@@ -53,9 +43,6 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     
     def validate(self, data):
-        """
-        Validate user credentials
-        """
         email = data['email'].lower().strip()
         password = data['password']
         
@@ -71,9 +58,6 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(me_serializers.DocumentSerializer):
-    """
-    Serializer for user profile data
-    """
     id = serializers.CharField(read_only=True)
     email = serializers.EmailField(read_only=True)
     display_name = serializers.CharField(min_length=2, max_length=100)
@@ -92,9 +76,6 @@ class UserProfileSerializer(me_serializers.DocumentSerializer):
 
 
 class TimeEntrySerializer(me_serializers.DocumentSerializer):
-    """
-    Serializer for time entries
-    """
     id = serializers.CharField(read_only=True)
     user = serializers.CharField(read_only=True)
     description = serializers.CharField(min_length=3, max_length=1000)
@@ -107,19 +88,16 @@ class TimeEntrySerializer(me_serializers.DocumentSerializer):
     duration_display = serializers.SerializerMethodField()
     
     def get_duration_display(self, obj):
-        """Convert seconds to HH:MM:SS format"""
         hours, remainder = divmod(obj.duration_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     
     def create(self, validated_data):
-        """Create new TimeEntry instance"""
         time_entry = TimeEntry(**validated_data)
         time_entry.save()
         return time_entry
     
     def update(self, instance, validated_data):
-        """Update TimeEntry instance"""
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -156,9 +134,6 @@ class TimeEntrySerializer(me_serializers.DocumentSerializer):
 
 
 class TimeEntryCreateSerializer(TimeEntrySerializer):
-    """
-    Serializer for creating time entries with validation logic
-    """
     
     class Meta:
         model = TimeEntry
@@ -184,30 +159,27 @@ class TimeEntryCreateSerializer(TimeEntrySerializer):
                 raise serializers.ValidationError(
                     "End time is required for manual time entries."
                 )
-        if 'start_time' in data and 'end_time' in data and data['start_time'] and data['end_time']:
-            start_time = data['start_time']
-            end_time = data['end_time']
-        
-            if start_time.tzinfo is None:
-                start_time = timezone.make_aware(start_time)
-                data['start_time'] = start_time
+            if 'start_time' in data and 'end_time' in data and data['start_time'] and data['end_time']:
+                start_time = data['start_time']
+                end_time = data['end_time']
             
-            if end_time.tzinfo is None:
-                end_time = timezone.make_aware(end_time)
-                data['end_time'] = end_time
-      
-            if start_time >= end_time:
-                raise serializers.ValidationError(
-                    "Start time must be before end time."
-                )
+                if start_time.tzinfo is None:
+                    start_time = timezone.make_aware(start_time)
+                    data['start_time'] = start_time
+                
+                if end_time.tzinfo is None:
+                    end_time = timezone.make_aware(end_time)
+                    data['end_time'] = end_time
+        
+                if start_time >= end_time:
+                    raise serializers.ValidationError(
+                        "Start time must be before end time."
+                    )
         
         return data
 
 
 class TrackerSessionSerializer(me_serializers.DocumentSerializer):
-    """
-    Serializer for tracker sessions
-    """
     id = serializers.CharField(read_only=True)
     user = serializers.CharField(read_only=True)
     started_at = serializers.DateTimeField()
@@ -219,7 +191,6 @@ class TrackerSessionSerializer(me_serializers.DocumentSerializer):
     current_elapsed_seconds = serializers.SerializerMethodField()
     
     def get_current_elapsed_seconds(self, obj):
-        """Calculate current elapsed seconds for the tracker"""
         return obj.get_current_elapsed_seconds()
 
 
@@ -232,9 +203,6 @@ class TrackerStatusSerializer(serializers.Serializer):
 
 
 class TrackerActionSerializer(serializers.Serializer):
-    """
-    Serializer for tracker actions (start, pause, resume, reset)
-    """
     action = serializers.ChoiceField(choices=[
         ('start', 'Start'),
         ('pause', 'Pause'),

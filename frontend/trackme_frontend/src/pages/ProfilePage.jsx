@@ -19,7 +19,6 @@ const ProfilePage = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Profile form
   const {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
@@ -33,7 +32,6 @@ const ProfilePage = () => {
     }
   });
 
-  // Password form
   const {
     register: registerPassword,
     handleSubmit: handleSubmitPassword,
@@ -44,7 +42,6 @@ const ProfilePage = () => {
 
   const newPassword = watchPassword('new_password');
 
-  // Update profile information
   const onSubmitProfile = async (data) => {
     try {
       const result = await updateUser({
@@ -63,7 +60,6 @@ const ProfilePage = () => {
     }
   };
 
-  // Change password
   const onSubmitPassword = async (data) => {
     try {
       await api.user.changePassword({
@@ -137,7 +133,6 @@ const ProfilePage = () => {
           </div>
 
           {!isEditingProfile ? (
-            /* Display Mode */
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -176,7 +171,6 @@ const ProfilePage = () => {
               </div>
             </div>
           ) : (
-            /* Edit Mode */
             <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

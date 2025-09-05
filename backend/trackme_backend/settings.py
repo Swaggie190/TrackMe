@@ -177,3 +177,28 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+import os
+import mongoengine
+
+try:
+    mongoengine.disconnect()
+except:
+    pass
+
+MONGODB_HOST = os.environ.get('MONGODB_HOST', 'mongodb')
+MONGODB_PORT = int(os.environ.get('MONGODB_PORT', '27017'))
+MONGODB_DB = os.environ.get('MONGODB_DB', 'trackme_db')
+MONGODB_USERNAME = os.environ.get('MONGODB_USERNAME')
+MONGODB_PASSWORD = os.environ.get('MONGODB_PASSWORD')
+
+print(f"Connecting to MongoDB: {MONGODB_USERNAME}@{MONGODB_HOST}:{MONGODB_PORT}/{MONGODB_DB}")
+
+mongoengine.connect(
+    db=MONGODB_DB,
+    host=MONGODB_HOST,
+    port=MONGODB_PORT,
+    username=MONGODB_USERNAME,
+    password=MONGODB_PASSWORD,
+    authentication_source=MONGODB_DB
+)

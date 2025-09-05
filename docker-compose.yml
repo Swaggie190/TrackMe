@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: trackme_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-trackme_db}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - trackme_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Django Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trackme_backend
+    restart: unless-stopped
+    environment:
+      - DEBUG=0
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DB=${MONGO_DB:-trackme_db}
+      - MONGODB_USERNAME=${MONGO_USER:-trackme_user}
+      - MONGODB_PASSWORD=${MONGO_PASSWORD:-trackme_pass}
+      - SECRET_KEY=${DJANGO_SECRET_KEY:-your-secret-key-change-in-production}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,frontend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/static
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - trackme_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend/trackme_frontend
+      dockerfile: Dockerfile
+    container_name: trackme_frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - trackme_network
+
+  # Initialize Database and Sample Data
+  init-db:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trackme_init_db
+    environment:
+      - DEBUG=0
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DB=${MONGO_DB:-trackme_db}
+      - MONGODB_USERNAME=${MONGO_USER:-trackme_user}
+      - MONGODB_PASSWORD=${MONGO_PASSWORD:-trackme_pass}
+      - SECRET_KEY=${DJANGO_SECRET_KEY:-your-secret-key-change-in-production}
+    volumes:
+      - ./backend:/app
+      - ./scripts:/scripts
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - trackme_network
+    command: python manage.py shell < /scripts/init_db.py
+    restart: "no"
+
+volumes:
+  mongodb_data:
+    driver: local
+  static_volume:
+    driver: local
+
+networks:
+  trackme_network:
+    driver: bridge

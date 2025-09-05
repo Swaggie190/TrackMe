@@ -4,7 +4,6 @@ TrackMe is a web application that tracks a user's time and allows the user to bo
 
 ## Table of Contents
 - [Installation](#installation)
-- [Usage](#usage)
 - [What time I spent?](#time_spent)
 - [What I liked and did not like](#The_Likes)
 - [What I would do if I had more time?](#The_Alternatives)
@@ -13,9 +12,33 @@ TrackMe is a web application that tracks a user's time and allows the user to bo
 
 ## installation
 
+1. clone the repository
 
+```bash
+    git clone https://github.com/Swaggie190/TrackMe.git
+    cd TrackMe
+```
+2. environment settings
 
-## usage
+```bash
+    cp .env.example .env
+```
+3. Docker build
+
+```bash
+    docker-compose up -d --build
+
+    docker-compose run --rm init-db
+```
+
+4. Access application
+```bash
+    Frontend: http://localhost:3000
+    Backend: http://localhost:8000/api/v1/
+```
+NOTICE: a demo user is automatically created : Demo_Login: demo@trackme.com / demo@123 , but unfortunately, there are login issues with this particular user, so the only way to test this application will be to register a user on the register page, do some few simulations and test other parts of this application.
+
+Sorry for the inconviniences.
 
 
 ## time_spent

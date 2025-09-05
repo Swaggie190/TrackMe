@@ -149,7 +149,7 @@ const NotificationItem = ({ notification, onClose }) => {
   return (
     <div
       className={`
-        max-w-md w-full shadow-lg rounded-lg border pointer-events-auto
+        w-96 shadow-lg rounded-lg border pointer-events-auto
         ${getColors()}
         transform transition-all duration-300 ease-in-out
         animate-in slide-in-from-right-full

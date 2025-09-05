@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from timetracking.health import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('timetracking.urls')),
+    path('api/v1/health/', health_check, name='health_check'),
 ]

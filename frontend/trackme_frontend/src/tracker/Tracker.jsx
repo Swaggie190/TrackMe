@@ -13,13 +13,13 @@ import { formatTime } from '../services/api';
 const Tracker = ({ onBookTime }) => {
   const {
     trackerState,
-    localSeconds,
+    displaySeconds: localSeconds,
     isLoading,
     error,
-    start,
-    pause,
-    resume,
-    reset,
+    startTracker,
+    pauseTracker : pause,
+    resumeTracker : resume,
+    resetTracker: reset,
     loadTrackerStatus
   } = useTracker();
 
@@ -41,7 +41,7 @@ const Tracker = ({ onBookTime }) => {
   const handleStart = async () => {
     setActionLoading('start');
     try {
-      await start();
+      await startTracker();
       notifications.success('Timer started');
     } catch (err) {
       notifications.error('Failed to start timer');

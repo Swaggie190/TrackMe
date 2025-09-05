@@ -200,22 +200,22 @@ const api = {
     },
     
     start: async () => {
-      const response = await apiClient.post('/tracker/start/');
-      return response.data;
+    const response = await apiClient.post('/tracker/start/', { action: 'start' });
+    return response.data;
     },
     
     pause: async () => {
-      const response = await apiClient.post('/tracker/pause/');
+      const response = await apiClient.post('/tracker/pause/', { action: 'pause' });
       return response.data;
     },
     
     resume: async () => {
-      const response = await apiClient.post('/tracker/resume/');
+      const response = await apiClient.post('/tracker/resume/', { action: 'resume' });
       return response.data;
     },
     
     reset: async () => {
-      const response = await apiClient.post('/tracker/reset/');
+      const response = await apiClient.post('/tracker/reset/', { action: 'reset' });
       return response.data;
     },
   },

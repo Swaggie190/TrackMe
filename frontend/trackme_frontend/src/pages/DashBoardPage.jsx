@@ -110,7 +110,7 @@ const DashboardPage = () => {
             disabled={isLoadingData}
             className="btn-secondary flex items-center"
           >
-            <ArrowRefreshIcon className={`w-4 h-4 mr-2 ${isLoadingData ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className={`w-4 h-4 mr-2 ${isLoadingData ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
@@ -386,7 +386,6 @@ const DashboardPage = () => {
         }}
         onSuccess={handleTimeEntrySuccess}
         entry={null}
-        initialData={timeEntryData}
       />
     </div>
   );

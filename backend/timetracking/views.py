@@ -22,24 +22,32 @@ class UserRegistrationView(APIView):
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
-        """
-        Create a new user account
-        """
+
+        print(f"🔍 Registration request data: {request.data}")
+        print(f"🔍 Request content type: {request.content_type}")
+     
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'message': 'User created successfully',
-                'user': UserProfileSerializer(user).data,
-                'tokens': {
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                user = serializer.save()
 
+                from .tokens import create_tokens_for_mongo_user
+
+                refresh = create_tokens_for_mongo_user(user)
+                return Response({
+                    'message': 'User created successfully',
+                    'user': UserProfileSerializer(user).data,
+                    'tokens': {
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                    }
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                print(f"🚨 Error creating user: {e}")
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            print(f"❌ Serializer validation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
     """
@@ -55,7 +63,9 @@ class UserLoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
             
-            refresh = RefreshToken.for_user(user)
+            from .tokens import create_tokens_for_mongo_user
+    
+            refresh = create_tokens_for_mongo_user(user)
             
             return Response({
                 'message': 'Login successful',
@@ -151,10 +161,22 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
     
     def get_user_object(self):
         try:
-            user_email = self.request.user.username
+            # Get email from authenticated Django user
+            user_email = self.request.user.email
+            if not user_email:
+                user_email = self.request.user.username
+                
+            if not user_email:
+                raise Http404("No email found for authenticated user")
+                
+            # Find corresponding MongoEngine user
             return User.objects.get(email=user_email)
+            
         except User.DoesNotExist:
-            raise Http404("User not found")
+            raise Http404("MongoEngine user not found")
+        except Exception as e:
+            raise Http404(f"User lookup error: {str(e)}")
+        
     
     def get_serializer_class(self):
         """

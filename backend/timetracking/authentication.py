@@ -1,102 +1,34 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import UntypedToken
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from django.contrib.auth.models import AnonymousUser
-from .models import User
-import jwt
-from django.conf import settings
+from rest_framework_simplejwt.exceptions import InvalidToken
+from django.contrib.auth.models import User as DjangoUser
+from .models import User as MongoUser
 
 
-class MongoEngineJWTAuthentication(JWTAuthentication):
+class EmailBasedJWTAuthentication(JWTAuthentication):
+    """
+    Custom JWT authentication that uses email instead of user ID
+    """
     
     def get_user(self, validated_token):
-    
+        """
+        Get Django User from JWT token using email
+        """
         try:
-            user_email = validated_token.get('user_id') or validated_token.get('email')
-            
+            # Get email from the token
+            user_email = validated_token.get('email')
             if not user_email:
-                raw_token = str(validated_token.token)
-                decoded = jwt.decode(raw_token, options={"verify_signature": False})
-                user_email = decoded.get('email') or decoded.get('user_id')
+                raise InvalidToken('Token does not contain email')
             
-            if not user_email:
-                return None
-                
-            user = User.objects.get(email=user_email)
-            return MongoEngineUserWrapper(user)
+            # Find or create Django user with this email
+            django_user, created = DjangoUser.objects.get_or_create(
+                username=user_email,
+                defaults={
+                    'email': user_email,
+                    'is_active': True,
+                }
+            )
             
-        except User.DoesNotExist:
-            return None
-        except (KeyError, TokenError):
-            return None
-
-
-class MongoEngineUserWrapper:
-    
-    def __init__(self, mongoengine_user):
-        self.mongoengine_user = mongoengine_user
-    
-    @property
-    def pk(self):
-        return str(self.mongoengine_user.id)
-    
-    @property
-    def id(self):
-        return str(self.mongoengine_user.id)
-    
-    @property
-    def username(self):
-        return self.mongoengine_user.email
-    
-    @property
-    def email(self):
-        return self.mongoengine_user.email
-    
-    @property
-    def is_authenticated(self):
-        return True
-    
-    @property
-    def is_anonymous(self):
-        return False
-    
-    @property
-    def is_active(self):
-        return True 
-    
-    @property
-    def is_staff(self):
-        return False 
-    
-    @property
-    def is_superuser(self):
-        return False  
-    
-    def __str__(self):
-        return self.mongoengine_user.email
-    
-    def has_perm(self, perm, obj=None):
-        return False  
-    
-    def has_perms(self, perm_list, obj=None):
-        return False
-    
-    def has_module_perms(self, package_name):
-        return False
-    
-    def get_username(self):
-        return self.username
-
-
-from rest_framework_simplejwt.tokens import RefreshToken
-
-class MongoEngineRefreshToken(RefreshToken):
-    
-    @classmethod
-    def for_user(cls, user):
-        token = cls()
-        token['user_id'] = user.email
-        token['email'] = user.email
-        return token
-
-RefreshToken.for_user = MongoEngineRefreshToken.for_user
+            return django_user
+            
+        except Exception as e:
+            raise InvalidToken(f'User authentication failed: {str(e)}')

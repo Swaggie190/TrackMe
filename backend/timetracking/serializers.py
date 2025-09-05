@@ -11,17 +11,11 @@ from django.utils import timezone
 
 
 class UserRegistrationSerializer(serializers.Serializer):
-    """
-    Serializer for user registration
-    """
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, max_length=128, write_only=True)
     display_name = serializers.CharField(min_length=2, max_length=100)
     
     def validate_email(self, value):
-        """
-        Check if email already exists
-        """
         email = value.lower().strip()
         
         try:

@@ -75,39 +75,33 @@ class TimeEntry(Document):
     }
     
     def clean(self):
-        """
-        Custom validation for time entries
-        """
         if self.end_time:
             now = timezone.now()
-        
+            
             end_time = self.end_time
             if end_time.tzinfo is None:
                 end_time = timezone.make_aware(end_time)
-
+            
             max_future = now + timedelta(minutes=5)
             if end_time > max_future:
-                raise ValidationError("End time cannot be more than 5 minutes in the future")
-            
-            if self.end_time > now.replace(microsecond=0).replace(second=0) + timedelta(minutes=5):
                 raise ValidationError("End time cannot be more than 5 minutes in the future")
         
         if self.start_time and self.end_time:
             start_time = self.start_time
             end_time = self.end_time
-           
+
             if start_time.tzinfo is None:
                 start_time = timezone.make_aware(start_time)
             
             if end_time.tzinfo is None:
                 end_time = timezone.make_aware(end_time)
 
-            if self.start_time >= self.end_time:
+            if start_time >= end_time:
                 raise ValidationError("Start time must be before end time")
-  
+        
+        # Validate description contains meaningful content
         if self.description and not self.description.strip():
             raise ValidationError("Description cannot be empty or only whitespace")
-    
     @property
     def duration_display(self):
         """
@@ -153,20 +147,27 @@ class TrackerSession(Document):
     }
     
     def get_current_elapsed_seconds(self):
-        """
-        Calculate total elapsed seconds including current session
-        """
+       
         total = self.accumulated_seconds
         
         if self.is_running and self.started_at:
             if self.paused_at:
+
+                pause_time = self.paused_at
+                start_time = self.started_at
+                
+                if pause_time.tzinfo is None:
+                    pause_time = timezone.make_aware(pause_time)
+                if start_time.tzinfo is None:
+                    start_time = timezone.make_aware(start_time)
                 current_session = (self.paused_at - self.started_at).total_seconds()
             else:
                 now = timezone.now()
                 start_time = self.started_at
                 if start_time.tzinfo is None:
                     start_time = timezone.make_aware(start_time)
-                current_session = (now - self.started_at).total_seconds()
+
+                current_session = (now - start_time).total_seconds()
             
             total += int(current_session)
         
@@ -179,15 +180,18 @@ class TrackerSession(Document):
             self.is_running = False
             
             if self.started_at:
-                session_seconds = (self.paused_at - self.started_at).total_seconds()
+                start_time = self.started_at
+                pause_time = self.paused_at
+                
+                if start_time.tzinfo is None:
+                    start_time = timezone.make_aware(start_time)
+
+                session_seconds = (pause_time - start_time).total_seconds()
                 self.accumulated_seconds += int(session_seconds)
-            
             self.updated_at = timezone.now()
     
     def resume(self):
-        """
-        Resume the tracker from paused state
-        """
+
         if not self.is_running:
             self.started_at = timezone.now()
             self.paused_at = None
@@ -204,8 +208,17 @@ class TrackerSession(Document):
     def clean(self):
         self.updated_at = timezone.now()
       
-        if self.paused_at and self.started_at and self.paused_at < self.started_at:
-            raise ValidationError("Pause time cannot be before start time")
+        if self.paused_at and self.started_at:
+            pause_time = self.paused_at
+            start_time = self.started_at
+            
+            if pause_time.tzinfo is None:
+                pause_time = timezone.make_aware(pause_time)
+            if start_time.tzinfo is None:
+                start_time = timezone.make_aware(start_time)
+                
+            if pause_time < start_time:
+                raise ValidationError("Pause time cannot be before start time")
     
     def __str__(self):
         status = "Running" if self.is_running else "Paused"

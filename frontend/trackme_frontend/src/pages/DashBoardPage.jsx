@@ -386,6 +386,7 @@ const DashboardPage = () => {
         }}
         onSuccess={handleTimeEntrySuccess}
         entry={null}
+        initialData={timeEntryData}
       />
     </div>
   );

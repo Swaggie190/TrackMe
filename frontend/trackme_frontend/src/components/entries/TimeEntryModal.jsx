@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog } from '@headlessui/react';
+import { Dialog, DialogBackdrop, DialogTitle} from '@headlessui/react';
 import { 
   XMarkIcon, 
   ClockIcon,
@@ -9,6 +9,8 @@ import {
   CalendarIcon 
 } from '@heroicons/react/24/outline';
 import api, { formatTime } from '../../services/api';
+
+console.log({ Dialog, XMarkIcon, ClockIcon, PlusIcon, PencilIcon, CalendarIcon, api, formatTime });
 
 const TimeEntryModal = ({ 
   isOpen, 
@@ -168,7 +170,7 @@ const TimeEntryModal = ({
       className="fixed inset-0 z-50 overflow-y-auto"
     >
       <div className="flex items-center justify-center min-h-screen p-4">
-        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-30" />
+        <DialogBackdrop className="fixed inset-0 bg-black bg-opacity-30" />
         
         <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
           {/* Header */}
@@ -182,9 +184,9 @@ const TimeEntryModal = ({
                 )}
               </div>
               <div>
-                <Dialog.Title className="text-lg font-semibold text-gray-900">
+                <DialogTitle className="text-lg font-semibold text-gray-900">
                   {isEditing ? 'Edit Time Entry' : 'Add Time Entry'}
-                </Dialog.Title>
+                </DialogTitle>
                 <p className="text-sm text-gray-500">
                   {isEditing ? 'Update your time entry details' : 'Manually add a new time entry'}
                 </p>

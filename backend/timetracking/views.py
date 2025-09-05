@@ -206,22 +206,20 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
         """
         try:
             tracker = TrackerSession.objects.get(user=user)
-            
-            # Calculate duration from tracker
+        
             duration_seconds = tracker.get_current_elapsed_seconds()
             
             if duration_seconds <= 0:
                 raise ValueError("No time tracked to book")
-            
-            # Create the time entry
+
+            original_start_time = tracker.started_at
             serializer.save(
                 user=user,
                 duration_seconds=duration_seconds,
-                start_time=tracker.started_at,
+                start_time=original_start_time,
                 booked_from_tracker=True
             )
-            
-            # Reset the tracker
+      
             tracker.reset()
             tracker.save()
             

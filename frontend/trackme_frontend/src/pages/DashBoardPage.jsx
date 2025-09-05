@@ -134,21 +134,6 @@ const DashboardPage = () => {
                   {stats.today_entries || 0}
                 </span>
               </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Daily Goal Progress</span>
-                  <span>{Math.round(((stats.today_seconds || 0) / (8 * 3600)) * 100)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${Math.min(((stats.today_seconds || 0) / (8 * 3600)) * 100, 100)}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
             </div>
           </div>
 

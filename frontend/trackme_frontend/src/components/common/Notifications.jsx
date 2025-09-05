@@ -123,33 +123,33 @@ const NotificationItem = ({ notification, onClose }) => {
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircleIcon className="w-5 h-5 text-success-600" />;
+        return <CheckCircleIcon className="w-5 h-5 text-success-700" />;
       case 'error':
-        return <ExclamationTriangleIcon className="w-5 h-5 text-danger-600" />;
+        return <ExclamationTriangleIcon className="w-5 h-5 text-danger-700" />;
       case 'warning':
-        return <ExclamationTriangleIcon className="w-5 h-5 text-warning-600" />;
+        return <ExclamationTriangleIcon className="w-5 h-5 text-warning-700" />;
       default:
-        return <InformationCircleIcon className="w-5 h-5 text-primary-600" />;
+        return <InformationCircleIcon className="w-5 h-5 text-primary-700" />;
     }
   };
 
   const getColors = () => {
     switch (type) {
       case 'success':
-        return 'bg-success-50 border-success-200 text-success-800';
+        return 'bg-success-100 border-success-300 text-success-900';
       case 'error':
-        return 'bg-danger-50 border-danger-200 text-danger-800';
+        return 'bg-danger-100 border-danger-300 text-danger-900';
       case 'warning':
-        return 'bg-warning-50 border-warning-200 text-warning-800';
+        return 'bg-warning-100 border-warning-300 text-warning-900';
       default:
-        return 'bg-primary-50 border-primary-200 text-primary-800';
+        return 'bg-primary-100 border-primary-300 text-primary-900';
     }
   };
 
   return (
     <div
       className={`
-        max-w-sm w-full shadow-lg rounded-lg border pointer-events-auto
+        max-w-md w-full shadow-lg rounded-lg border pointer-events-auto
         ${getColors()}
         transform transition-all duration-300 ease-in-out
         animate-in slide-in-from-right-full
@@ -172,7 +172,7 @@ const NotificationItem = ({ notification, onClose }) => {
           </div>
           <div className="ml-4 flex-shrink-0 flex">
             <button
-              className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none"
+              className="inline-flex text-gray-500 hover:text-gray-700 focus:outline-none"
               onClick={onClose}
             >
               <XMarkIcon className="w-4 h-4" />
